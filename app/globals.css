@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg: #FAF5EC;
+  --card: #FFFFFF;
+  --navy: #18285A;
+  --navy-hover: #1E3170;
+  --gold: #B8891E;
+  --gold-pale: #F0DFA8;
+  --gold-muted: rgba(184, 137, 30, 0.12);
+  --border: #E2D8C2;
+  --border-dark: #C8B898;
+  --text: #1A1510;
+  --text-muted: #6B5F48;
+  --correct: #2E7A50;
+  --correct-pale: #D4EDE0;
+  --present: #B8891E;
+  --absent: #766D60;
+  --absent-text: #FFFFFF;
+  --wrong: #B53030;
+  --wrong-pale: #F5DEDE;
+  --radius: 10px;
+}
+
+@theme inline {
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: Lora, Georgia, serif;
+
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-navy: var(--navy);
+  --color-navy-hover: var(--navy-hover);
+  --color-gold: var(--gold);
+  --color-gold-pale: var(--gold-pale);
+  --color-gold-muted: var(--gold-muted);
+  --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-correct: var(--correct);
+  --color-correct-pale: var(--correct-pale);
+  --color-present: var(--present);
+  --color-absent: var(--absent);
+  --color-absent-text: var(--absent-text);
+  --color-wrong: var(--wrong);
+  --color-wrong-pale: var(--wrong-pale);
+
+  --radius-default: 10px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  font-family: Lora, Georgia, serif;
+  color: var(--text);
+}
+
+a {
+  text-decoration: none;
+}
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+}
+
+@keyframes fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s ease;
+}

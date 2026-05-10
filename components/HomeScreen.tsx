@@ -1,0 +1,297 @@
+"use client";
+
+import { Difficulty } from "@/lib/types";
+import { getHebrewDateString } from "@/lib/jewishDate";
+
+type HomeScreenProps = {
+  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onHowToPlay: () => void;
+};
+
+const difficulties: {
+  level: Difficulty;
+  letter: string;
+  letterColor: string;
+  name: string;
+  subtitle: string;
+  desc: string;
+}[] = [
+  {
+    level: "easy",
+    letter: "א",
+    letterColor: "#2E7A50",
+    name: "Aleph",
+    subtitle: "Beginner",
+    desc: "Multiple choice, weekly parasha & holidays",
+  },
+  {
+    level: "medium",
+    letter: "ב",
+    letterColor: "#B8891E",
+    name: "Bet",
+    subtitle: "Intermediate",
+    desc: "Word guessing & short answers across Jewish texts",
+  },
+  {
+    level: "hard",
+    letter: "ג",
+    letterColor: "#8B1A1A",
+    name: "Gimel",
+    subtitle: "Advanced",
+    desc: "In-depth questions for scholars, educators & rabbis",
+  },
+];
+
+const todayFormatted = new Date().toLocaleDateString("en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+export default function HomeScreen({ onSelectDifficulty, onHowToPlay }: HomeScreenProps) {
+  const hebrewDate = getHebrewDateString();
+
+  return (
+    <div
+      style={{
+        maxWidth: 540,
+        width: "100%",
+        margin: "0 auto",
+        padding: "0 16px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      {/* Section 1 — Hero */}
+      <section
+        style={{
+          textAlign: "center",
+          paddingTop: 40,
+          paddingBottom: 28,
+          width: "100%",
+        }}
+      >
+        <div style={{ fontSize: 44, lineHeight: 1 }}>📜</div>
+
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 52,
+            fontWeight: 700,
+            color: "var(--navy)",
+            letterSpacing: "4px",
+            textTransform: "uppercase",
+            lineHeight: 0.95,
+            marginTop: 12,
+          }}
+        >
+          Daily Davar
+        </div>
+
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 26,
+            color: "var(--gold)",
+            letterSpacing: "8px",
+            marginTop: 6,
+          }}
+        >
+          דָּבָר
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 10,
+            marginTop: 14,
+            fontSize: 13,
+            color: "var(--text-muted)",
+            fontStyle: "italic",
+            flexWrap: "wrap",
+          }}
+        >
+          <span>{todayFormatted}</span>
+          <span style={{ color: "var(--border-dark)" }}>·</span>
+          <span dir="rtl">{hebrewDate}</span>
+        </div>
+      </section>
+
+      {/* Section 2 — Divider */}
+      <div
+        style={{
+          width: 50,
+          height: 1.5,
+          background: "var(--gold)",
+          margin: "24px auto",
+        }}
+      />
+
+      {/* Section 3 — Difficulty picker */}
+      <section style={{ width: "100%" }}>
+        <div
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 20,
+            fontWeight: 600,
+            color: "var(--navy)",
+            textAlign: "center",
+            marginBottom: 16,
+          }}
+        >
+          Choose your level of study
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 12,
+          }}
+        >
+          {difficulties.map(({ level, letter, letterColor, name, subtitle, desc }) => (
+            <DifficultyCard
+              key={level}
+              letter={letter}
+              letterColor={letterColor}
+              name={name}
+              subtitle={subtitle}
+              desc={desc}
+              onClick={() => onSelectDifficulty(level)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Section 4 — How to play */}
+      <div style={{ marginTop: 28, marginBottom: 24 }}>
+        <HowToPlayButton onClick={onHowToPlay} />
+      </div>
+    </div>
+  );
+}
+
+function DifficultyCard({
+  letter,
+  letterColor,
+  name,
+  subtitle,
+  desc,
+  onClick,
+}: {
+  letter: string;
+  letterColor: string;
+  name: string;
+  subtitle: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = "var(--navy)";
+        el.style.transform = "translateY(-2px)";
+        el.style.boxShadow = "0 6px 20px rgba(24, 40, 90, 0.1)";
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = "var(--border)";
+        el.style.transform = "translateY(0)";
+        el.style.boxShadow = "none";
+      }}
+      style={{
+        background: "var(--card)",
+        border: "1.5px solid var(--border)",
+        borderRadius: "var(--radius)",
+        padding: "20px 12px 16px",
+        cursor: "pointer",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6,
+        transition: "all 0.2s",
+        transform: "translateY(0)",
+        boxShadow: "none",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 36,
+          fontWeight: 700,
+          color: letterColor,
+          lineHeight: 1,
+        }}
+      >
+        {letter}
+      </span>
+      <span
+        style={{
+          fontSize: 16,
+          fontWeight: 600,
+          color: "var(--navy)",
+        }}
+      >
+        {name}
+      </span>
+      <span
+        style={{
+          fontSize: 10,
+          textTransform: "uppercase",
+          letterSpacing: "1.5px",
+          color: "var(--text-muted)",
+        }}
+      >
+        {subtitle}
+      </span>
+      <span
+        style={{
+          fontSize: 11,
+          fontStyle: "italic",
+          color: "var(--text-muted)",
+          lineHeight: 1.5,
+        }}
+      >
+        {desc}
+      </span>
+    </button>
+  );
+}
+
+function HowToPlayButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = "var(--navy)";
+        el.style.color = "var(--navy)";
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget;
+        el.style.borderColor = "var(--border)";
+        el.style.color = "var(--text-muted)";
+      }}
+      style={{
+        background: "transparent",
+        border: "1.5px solid var(--border)",
+        borderRadius: 8,
+        padding: "8px 20px",
+        fontFamily: "Lora, Georgia, serif",
+        fontSize: 13,
+        color: "var(--text-muted)",
+        cursor: "pointer",
+        transition: "border-color 0.2s, color 0.2s",
+      }}
+    >
+      ? How to Play
+    </button>
+  );
+}
