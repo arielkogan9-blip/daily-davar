@@ -133,6 +133,36 @@ export default function Home() {
     }
   }
 
+  /**
+   * Called by the self-grade buttons on open-ended text_box questions.
+   * The user has already seen the model answer and decided whether they
+   * knew it — we record a single attempt and immediately end the game.
+   */
+  function handleSelfGrade(correct: boolean, userText: string) {
+    if (gameOver || !question || !difficulty) return;
+
+    const newAttempts: Attempt[] = [...attempts, { answer: userText, correct }];
+    setAttempts(newAttempts);
+    setGameOver(true);
+
+    if (correct) {
+      setWon(true);
+      const today = getTodayKey();
+      const lastPlayed = localStorage.getItem("dd_last_played");
+      if (lastPlayed !== today) {
+        const newStreak = lastPlayed === getYesterdayKey() ? streak + 1 : 1;
+        setStreak(newStreak);
+        localStorage.setItem("dd_streak", String(newStreak));
+        localStorage.setItem("dd_last_played", today);
+      }
+      saveToArchive(question, difficulty, newAttempts, true);
+      setTimeout(() => setGamePhase("result"), 1600);
+    } else {
+      saveToArchive(question, difficulty, newAttempts, false);
+      setTimeout(() => setGamePhase("result"), 1400);
+    }
+  }
+
   function handleRevealHint() {
     setHintShown(true);
   }
@@ -211,6 +241,7 @@ export default function Home() {
           hintShown={hintShown}
           gameOver={gameOver}
           onSubmitAnswer={handleSubmitAnswer}
+          onSelfGrade={handleSelfGrade}
           onRevealHint={handleRevealHint}
           onWordleRowsChange={setWordleRows}
         />

@@ -30,9 +30,17 @@ type GameScreenProps = {
   hintShown: boolean;
   gameOver: boolean;
   onSubmitAnswer: (answer: string) => void;
+  onSelfGrade?: (correct: boolean, userText: string) => void;
   onRevealHint: () => void;
   onWordleRowsChange?: (rows: WordleCell[][]) => void;
 };
+
+// A text_box question is "open-ended" when its stored answer is longer than
+// 5 words. These questions show a model-answer summary + self-grade buttons
+// instead of an exact-match evaluation.
+function isOpenEnded(q: Question): boolean {
+  return q.type === "text_box" && q.answer.split(/\s+/).filter(Boolean).length > 5;
+}
 
 export default function GameScreen({
   question,
@@ -42,6 +50,7 @@ export default function GameScreen({
   hintShown,
   gameOver,
   onSubmitAnswer,
+  onSelfGrade,
   onRevealHint,
   onWordleRowsChange,
 }: GameScreenProps) {
@@ -261,7 +270,12 @@ export default function GameScreen({
       )}
 
       {question.type === "text_box" && (
-        <TextBox gameOver={gameOver} onSubmit={onSubmitAnswer} />
+        <TextBox
+          gameOver={gameOver}
+          onSubmit={onSubmitAnswer}
+          modelAnswer={isOpenEnded(question) ? question.answer : undefined}
+          onSelfGrade={isOpenEnded(question) ? onSelfGrade : undefined}
+        />
       )}
 
       {/* Row 7 — Hint panel */}
@@ -272,8 +286,10 @@ export default function GameScreen({
         onReveal={onRevealHint}
       />
 
-      {/* Row 8 — Answer reveal (game over, not won) */}
-      {gameOver && !won && (
+      {/* Row 8 — Answer reveal (game over, not won, short-answer only)
+           Open-ended questions already showed the model answer during the
+           self-grade step, so we skip the reveal for those. */}
+      {gameOver && !won && !isOpenEnded(question) && (
         <div
           style={{
             background: "var(--navy)",
