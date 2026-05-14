@@ -169,3 +169,32 @@ export function getTodaysPeriodForDate(dateKey: string): string {
 export function getTodaysPeriod(): string {
   return getTodaysPeriodForDate(getTodayKey());
 }
+
+/**
+ * Returns the normalised STARTS_5786 date on which the current period began.
+ * Used as a stable seed for the per-period question shuffle.
+ */
+export function getPeriodStartNorm(dateKey: string): string {
+  const norm    = normaliseToAnchorYear(new Date(dateKey + "T12:00:00"));
+  const normKey = norm.toISOString().slice(0, 10);
+  const sorted  = [...STARTS_5786].sort((a, b) => a.date.localeCompare(b.date));
+  let startDate = sorted[0].date;
+  for (const entry of sorted) {
+    if (entry.date <= normKey) { startDate = entry.date; }
+    else { break; }
+  }
+  return startDate;
+}
+
+/**
+ * Returns how many days into the current calendar period a given date falls
+ * (0-indexed). Day 0 = the first day of the period.
+ */
+export function getDayWithinPeriod(dateKey: string): number {
+  const norm        = normaliseToAnchorYear(new Date(dateKey + "T12:00:00"));
+  const normKey     = norm.toISOString().slice(0, 10);
+  const periodStart = getPeriodStartNorm(dateKey);
+  const startMs     = new Date(periodStart + "T12:00:00").getTime();
+  const todayMs     = new Date(normKey     + "T12:00:00").getTime();
+  return Math.max(0, Math.round((todayMs - startMs) / 86_400_000));
+}
