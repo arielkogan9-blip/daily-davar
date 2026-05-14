@@ -131,8 +131,7 @@ export default function PricingPage() {
               <Feature text="Full question history and stats"              included={false} />
               <Feature text="Answer explanations"                          included={false} />
               <Feature text="Archive — replay any past puzzle"             included={false} />
-              <Feature text="Classroom and group mode"                     included={false} />
-            </div>
+                          </div>
             <button
               style={CTA_BTN(false)}
               onClick={() => router.push("/")}
@@ -189,8 +188,7 @@ export default function PricingPage() {
               <Feature text="Answer explanations for every question" included />
               <Feature text="Stats dashboard with win-rate charts" included />
               <Feature text="Archive — replay any past puzzle"      included={false} />
-              <Feature text="Classroom and group mode"             included={false} />
-              <Feature text="Weekly printable digest"              included={false} />
+                            <Feature text="Weekly printable digest"              included={false} />
             </div>
             <button
               style={{ ...CTA_BTN(true), background: "var(--gold)", borderColor: "var(--gold)" }}
@@ -241,8 +239,7 @@ export default function PricingPage() {
                 "Everything in Plus",
                 "Parasha context with every question",
                 "Archive — replay any past puzzle",
-                "Classroom and group leaderboard mode",
-                "Weekly printable digest (21 questions)",
+                                "Weekly printable digest (21 questions)",
                 "Topic suggestion submissions",
               ].map((text) => (
                 <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>

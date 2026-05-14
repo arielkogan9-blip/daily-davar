@@ -8,7 +8,6 @@ export type TierFeatures = {
   explanations:    boolean;
   parashaContext:  boolean;
   archive:         boolean;
-  classroom:       boolean;
 };
 
 export const TIER_FEATURES: Record<Tier, TierFeatures> = {
@@ -20,7 +19,6 @@ export const TIER_FEATURES: Record<Tier, TierFeatures> = {
     explanations:    false,
     parashaContext:  false,
     archive:         false,
-    classroom:       false,
   },
   plus: {
     allDifficulties: true,
@@ -30,7 +28,6 @@ export const TIER_FEATURES: Record<Tier, TierFeatures> = {
     explanations:    true,
     parashaContext:  false,
     archive:         false,
-    classroom:       false,
   },
   scholar: {
     allDifficulties: true,
@@ -40,7 +37,6 @@ export const TIER_FEATURES: Record<Tier, TierFeatures> = {
     explanations:    true,
     parashaContext:  true,
     archive:         true,
-    classroom:       true,
   },
 };
 
