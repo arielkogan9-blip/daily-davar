@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import BackButton from "@/components/BackButton";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import WaitlistModal from "@/components/modals/WaitlistModal";
@@ -77,6 +78,7 @@ export default function PricingPage() {
       )}
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 20px 80px" }}>
+        <BackButton />
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           <div style={{

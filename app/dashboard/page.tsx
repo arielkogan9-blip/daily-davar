@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import BackButton from "@/components/BackButton";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -164,6 +165,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 540, margin: "0 auto", padding: "36px 20px 60px" }}>
+        <BackButton />
       {/* Title */}
       <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 34, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>
         Your Dashboard

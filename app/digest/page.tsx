@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import BackButton from "@/components/BackButton";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -247,6 +248,7 @@ export default function DigestPage() {
     <>
 
       <div ref={printRef} style={{ maxWidth: 620, margin: "0 auto", padding: "36px 20px 60px" }}>
+        <BackButton />
         {/* Print / Save button */}
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
           <button

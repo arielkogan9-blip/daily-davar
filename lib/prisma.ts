@@ -9,8 +9,11 @@ function createPrisma(): PrismaClient {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
 
-  // PrismaLibSql accepts the libsql Config object directly
-  const adapter = new PrismaLibSql({ url });
+  // DATABASE_AUTH_TOKEN is required for remote Turso databases in production;
+  // it is omitted for local file:// SQLite in development.
+  const authToken = process.env.DATABASE_AUTH_TOKEN;
+
+  const adapter = new PrismaLibSql({ url, ...(authToken ? { authToken } : {}) });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new PrismaClient({ adapter } as any);
 }

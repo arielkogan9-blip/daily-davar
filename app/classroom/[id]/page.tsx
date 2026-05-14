@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import BackButton from "@/components/BackButton";
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
@@ -118,13 +119,7 @@ export default function ClassroomLeaderboardPage() {
 
   return (
     <div style={{ maxWidth: 540, margin: "0 auto", padding: "36px 20px 60px" }}>
-      {/* Back link */}
-      <button
-        onClick={() => router.push("/classroom")}
-        style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 13, marginBottom: 20, padding: 0, fontFamily: "Lora, Georgia, serif" }}
-      >
-        ← Back to classrooms
-      </button>
+      <BackButton />
 
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, flexWrap: "wrap", gap: 10 }}>
