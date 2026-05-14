@@ -43,7 +43,8 @@ export async function GET(
     });
 
     // Build leaderboard entries
-    const entries = members.map(({ user, role }) => {
+    const entries = members.map((m) => {
+      const { user, role } = m;
       // Pick the best result today (prefer won, then fewest attempts)
       const todayResults = user.gameResults;
       const best = todayResults.sort((a, b) => {
