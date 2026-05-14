@@ -245,22 +245,6 @@ export default function DigestPage() {
 
   return (
     <>
-      {/* Print styles */}
-      <style>{`
-        @media print {
-          body { background: #fff !important; color: #000 !important; font-size: 12pt; }
-          .no-print { display: none !important; }
-          .answer-hidden { display: block !important; }
-          .answer-hidden .answer-block { display: block !important; }
-          header, nav { display: none !important; }
-          @page { size: A4; margin: 20mm 15mm; }
-          .digest-section { page-break-inside: avoid; }
-          .digest-q { page-break-inside: avoid; }
-          * { color: #000 !important; background: #fff !important; border-color: #ccc !important; }
-        }
-        .answer-hidden .answer-block { display: none; }
-        .answer-block { display: block; }
-      `}</style>
 
       <div ref={printRef} style={{ maxWidth: 620, margin: "0 auto", padding: "36px 20px 60px" }}>
         {/* Print / Save button */}

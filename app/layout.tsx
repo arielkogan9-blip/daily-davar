@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/providers/SessionProvider";
+import ThemeInit from "@/components/ThemeInit";
 
 export const metadata: Metadata = {
   title: "Daily Davar | דָּבָר",
@@ -14,15 +15,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* Inline script runs before paint — applies saved theme without a flash */}
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('dd_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}`,
-          }}
-        />
-      </head>
       <body>
+        <ThemeInit />
         <Providers>
           <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
             {children}

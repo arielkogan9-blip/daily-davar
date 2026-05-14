@@ -143,3 +143,19 @@ a {
 .animate-fade-up {
   animation: fade-up 0.35s ease;
 }
+
+/* ─── Digest answer toggle ───────────────────────────────────────────────── */
+.answer-hidden .answer-block { display: none; }
+.answer-block               { display: block; }
+
+/* ─── Digest print styles ────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; color: #000 !important; font-size: 12pt; }
+  .no-print { display: none !important; }
+  .answer-hidden .answer-block { display: block !important; }
+  header, nav { display: none !important; }
+  @page { size: A4; margin: 20mm 15mm; }
+  .digest-section { page-break-inside: avoid; }
+  .digest-q       { page-break-inside: avoid; }
+  * { color: #000 !important; background: #fff !important; border-color: #ccc !important; }
+}
