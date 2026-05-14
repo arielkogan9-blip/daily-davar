@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { UserStats, winRatePct } from "@/lib/stats";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "stats" | "appearance" | "howtoplay" | "feedback";
+export type SettingsTab = "account" | "stats" | "appearance" | "howtoplay" | "feedback";
 
 type SettingsModalProps = {
   stats: UserStats;
   theme: "light" | "dark";
   isLoggedIn: boolean;
   streak: number;
+  initialTab?: SettingsTab;
   onToggleTheme: () => void;
   onLogin: () => void;
   onClose: () => void;
@@ -489,18 +491,130 @@ function FeedbackTab() {
   );
 }
 
+// ─── Account tab ─────────────────────────────────────────────────────────────
+
+function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => void }) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+  const name  = session?.user?.name  ?? "";
+  const email = session?.user?.email ?? "";
+  const tier  = (session?.user as { tier?: string })?.tier ?? "free";
+
+  const tierColors: Record<string, { bg: string; color: string }> = {
+    free:    { bg: "var(--border)",       color: "var(--text-muted)" },
+    plus:    { bg: "var(--gold-muted)",   color: "var(--gold)"       },
+    scholar: { bg: "var(--correct-pale)", color: "var(--correct)"    },
+  };
+  const tc = tierColors[tier] ?? tierColors.free;
+
+  if (!isLoggedIn) {
+    return (
+      <div style={{ textAlign: "center", padding: "24px 0" }}>
+        <div style={{ fontSize: 44, marginBottom: 14 }}>👤</div>
+        <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 600, color: "var(--navy)", marginBottom: 10 }}>
+          Sign in to save your progress
+        </div>
+        <p style={{ ...BODY, marginBottom: 20 }}>
+          Create a free account to keep your streak across devices and unlock history and stats.
+        </p>
+        <button
+          onClick={() => { onClose(); setTimeout(onLogin, 10); }}
+          style={{
+            background: "var(--navy)", color: "var(--gold-pale)", border: "none",
+            borderRadius: 8, padding: "12px 28px",
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 17, fontWeight: 600, letterSpacing: "1px", cursor: "pointer",
+          }}
+        >
+          Sign In / Register
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Profile card */}
+      <div style={{ background: "var(--navy)", borderRadius: 12, padding: "20px 22px", display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: "50%",
+          background: "rgba(255,255,255,0.12)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 24, fontWeight: 700, color: "var(--gold)", flexShrink: 0,
+        }}>
+          {(name || email).charAt(0).toUpperCase()}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          {name && (
+            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 700, color: "var(--gold-pale)", marginBottom: 2 }}>
+              {name}
+            </div>
+          )}
+          <div style={{ fontSize: 13, color: "var(--gold-pale)", opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {email}
+          </div>
+          <span style={{
+            display: "inline-block", marginTop: 6,
+            background: tc.bg, color: tc.color,
+            fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+            letterSpacing: "0.8px", padding: "2px 8px", borderRadius: 999,
+          }}>
+            {tier}
+          </span>
+        </div>
+      </div>
+
+      {/* Info rows */}
+      <div style={{ background: "var(--card)", border: "1.5px solid var(--border)", borderRadius: 10 }}>
+        {[
+          { label: "Name",  value: name  || "—" },
+          { label: "Email", value: email || "—" },
+          { label: "Plan",  value: tier.charAt(0).toUpperCase() + tier.slice(1) },
+        ].map((row, i, arr) => (
+          <div key={row.label} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "11px 16px",
+            borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
+          }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px" }}>{row.label}</span>
+            <span style={{ fontSize: 14, color: "var(--text)", fontWeight: 500 }}>{row.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Sign out */}
+      <button
+        onClick={() => signOut({ callbackUrl: "/" })}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#c0392b"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "var(--wrong)"; }}
+        style={{
+          background: "var(--wrong)", color: "#fff", border: "none",
+          borderRadius: 8, padding: "12px",
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 16, fontWeight: 600, letterSpacing: "0.5px",
+          cursor: "pointer", transition: "background 0.15s",
+        }}
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+}
+
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
 export default function SettingsModal({
-  stats, theme, isLoggedIn, streak, onToggleTheme, onLogin, onClose,
+  stats, theme, isLoggedIn, streak, initialTab, onToggleTheme, onLogin, onClose,
 }: SettingsModalProps) {
-  const [tab, setTab] = useState<Tab>("stats");
+  const [tab, setTab] = useState<SettingsTab>(initialTab ?? "stats");
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: "stats",      label: "📊 Stats"      },
-    { id: "appearance", label: "🎨 Appearance"  },
-    { id: "howtoplay",  label: "📖 How to Play" },
-    { id: "feedback",   label: "✉️  Feedback"   },
+  const TABS: { id: SettingsTab; label: string }[] = [
+    { id: "account",    label: "👤 Account"     },
+    { id: "stats",      label: "📊 Stats"        },
+    { id: "appearance", label: "🎨 Appearance"   },
+    { id: "howtoplay",  label: "📖 How to Play"  },
+    { id: "feedback",   label: "✉️  Feedback"    },
   ];
 
   return (
@@ -582,6 +696,7 @@ export default function SettingsModal({
 
         {/* Tab content */}
         <div style={{ padding: "22px 22px 28px", overflowY: "auto", flex: 1 }}>
+          {tab === "account"    && <AccountTab onLogin={onLogin} onClose={onClose} />}
           {tab === "stats"      && <StatsTab stats={stats} streak={streak} isLoggedIn={isLoggedIn} onLogin={onLogin} />}
           {tab === "appearance" && <AppearanceTab theme={theme} onToggle={onToggleTheme} />}
           {tab === "howtoplay"  && <HowToPlayTab />}

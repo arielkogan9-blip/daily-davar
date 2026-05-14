@@ -11,7 +11,7 @@ import Header from "@/components/Header";
 import HomeScreen from "@/components/HomeScreen";
 import GameScreen from "@/components/GameScreen";
 import ResultScreen from "@/components/ResultScreen";
-import SettingsModal from "@/components/modals/SettingsModal";
+import SettingsModal, { type SettingsTab } from "@/components/modals/SettingsModal";
 import AuthModal from "@/components/modals/AuthModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
 
@@ -54,7 +54,8 @@ export default function Home() {
 
   // ── Game state ─────────────────────────────────────────────────────────────
   const [gamePhase,   setGamePhase]   = useState<GamePhase>("home");
-  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [activeModal,  setActiveModal]  = useState<string | null>(null);
+  const [settingsTab,  setSettingsTab]  = useState<SettingsTab>("stats");
   const [difficulty,  setDifficulty]  = useState<Difficulty | null>(null);
   const [question,    setQuestion]    = useState<Question | null>(null);
   const [attempts,    setAttempts]    = useState<Attempt[]>([]);
@@ -243,7 +244,7 @@ export default function Home() {
     <div style={{ position: "relative", minHeight: "100vh" }}>
       <Header
         streak={streak}
-        onSettings={() => setActiveModal("settings")}
+        onSettings={() => { setSettingsTab("account"); setActiveModal("settings"); }}
         onArchive={() => setActiveModal("archive")}
         onLogin={() => setActiveModal("login")}
       />
@@ -251,7 +252,7 @@ export default function Home() {
       {gamePhase === "home" && (
         <HomeScreen
           onSelectDifficulty={handleSelectDifficulty}
-          onHowToPlay={() => setActiveModal("settings")}
+          onHowToPlay={() => { setSettingsTab("howtoplay"); setActiveModal("settings"); }}
         />
       )}
 
@@ -298,6 +299,7 @@ export default function Home() {
       {/* ── Modals ── */}
       {activeModal === "settings" && (
         <SettingsModal
+          initialTab={settingsTab}
           stats={userStats}
           theme={theme}
           isLoggedIn={isLoggedIn}

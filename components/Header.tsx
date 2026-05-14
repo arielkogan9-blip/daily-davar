@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -25,36 +26,12 @@ const TIER_BADGE: Record<string, { bg: string; color: string; label: string }> =
   scholar: { bg: "var(--correct-pale)", color: "var(--correct)",    label: "Scholar" },
 };
 
-function NavLink({
-  label, onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--navy)")}
-      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-      style={{
-        background: "none", border: "none", padding: "3px 0",
-        fontFamily: "Lora, Georgia, serif", fontSize: 12,
-        cursor: "pointer", color: "var(--text-muted)",
-        transition: "color 0.12s", whiteSpace: "nowrap",
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-const SEP = (
-  <span style={{ color: "var(--border-dark)", fontSize: 11, userSelect: "none" }}>|</span>
-);
-
 export default function Header({ streak, onSettings, onArchive, onLogin }: HeaderProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = status === "authenticated" && !!session?.user;
   const tier       = (session?.user as { tier?: string })?.tier ?? "free";
@@ -62,24 +39,75 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
   const isScholar  = tier === "scholar";
   const badge      = TIER_BADGE[tier] ?? TIER_BADGE.free;
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [menuOpen]);
+
+  function iconHover(enter: boolean) {
+    return {
+      onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.borderColor = enter ? "var(--navy)" : "var(--border)";
+        e.currentTarget.style.color       = enter ? "var(--navy)" : "var(--text-muted)";
+      },
+      onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.color       = "var(--text-muted)";
+      },
+    };
+  }
+
+  // Shared dropdown menu item style
+  function MenuItem({
+    label, onClick, danger,
+  }: { label: string; onClick: () => void; danger?: boolean }) {
+    const base = danger ? "var(--wrong)" : "var(--text)";
+    const hov  = danger ? "#c0392b"      : "var(--navy)";
+    return (
+      <button
+        onClick={() => { setMenuOpen(false); onClick(); }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = hov; e.currentTarget.style.background = "var(--border)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = base; e.currentTarget.style.background = "transparent"; }}
+        style={{
+          display: "block", width: "100%", textAlign: "left",
+          background: "transparent", border: "none", padding: "9px 14px",
+          fontFamily: "Lora, Georgia, serif", fontSize: 13,
+          color: base, cursor: "pointer", transition: "all 0.1s",
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <header style={{ borderBottom: "1.5px solid var(--border)", background: "var(--bg)" }}>
+      {/* Use CSS grid so the logo column is always exactly centered */}
       <div
         style={{
           maxWidth: 540, margin: "0 auto",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center",
           padding: "12px 20px",
+          gap: 8,
         }}
       >
         {/* ── Left: icon buttons ─────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <button
             onClick={onSettings}
             aria-label="Settings"
             title="Settings"
             style={ICON_BTN}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.color = "var(--navy)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            {...iconHover(true)}
           >
             ⚙️
           </button>
@@ -88,8 +116,7 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
             aria-label="Question library"
             title="Question Library"
             style={ICON_BTN}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.color = "var(--navy)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            {...iconHover(true)}
           >
             📚
           </button>
@@ -99,15 +126,14 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
               aria-label="Weekly Digest"
               title="Weekly Digest"
               style={ICON_BTN}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.color = "var(--navy)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+              {...iconHover(true)}
             >
               📖
             </button>
           )}
         </div>
 
-        {/* ── Center: logo ───────────────────────────────────────────── */}
+        {/* ── Center: logo (always centered) ─────────────────────────── */}
         <button
           onClick={() => router.push("/")}
           style={{
@@ -129,19 +155,17 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
           </div>
         </button>
 
-        {/* ── Right: account / auth ───────────────────────────────────── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {/* ── Right: auth / account ───────────────────────────────────── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
 
           {/* Streak pill */}
           {streak > 0 && (
-            <div
-              style={{
-                background: "var(--navy)", color: "var(--gold-pale)",
-                padding: "3px 10px", borderRadius: 999,
-                fontFamily: "'Cormorant Garamond', Georgia, serif",
-                fontSize: 13, fontWeight: 600,
-              }}
-            >
+            <div style={{
+              background: "var(--navy)", color: "var(--gold-pale)",
+              padding: "3px 10px", borderRadius: 999,
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: 13, fontWeight: 600, flexShrink: 0,
+            }}>
               🔥 {streak}
             </div>
           )}
@@ -183,66 +207,61 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
             </div>
           )}
 
-          {/* ── Logged IN ── */}
+          {/* ── Logged IN: dropdown trigger ── */}
           {status !== "loading" && isLoggedIn && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-
-              {/* User + tier badge */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <button
-                  onClick={onSettings}
-                  title="Your stats"
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--navy)")}
+            <div ref={menuRef} style={{ position: "relative" }}>
+              {/* Trigger */}
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "none", border: "none", cursor: "pointer", padding: "4px 2px",
+                }}
+              >
+                <span
                   style={{
-                    background: "none", border: "none", padding: 0, cursor: "pointer",
                     fontFamily: "'Cormorant Garamond', Georgia, serif",
                     fontSize: 15, fontWeight: 700, color: "var(--navy)",
-                    transition: "color 0.12s",
                   }}
                 >
                   {firstName}
-                </button>
-                <span
-                  style={{
-                    background: badge.bg, color: badge.color,
-                    fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: "0.5px", padding: "2px 7px", borderRadius: 999,
-                  }}
-                >
+                </span>
+                <span style={{
+                  background: badge.bg, color: badge.color,
+                  fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                  letterSpacing: "0.5px", padding: "2px 7px", borderRadius: 999,
+                }}>
                   {badge.label}
                 </span>
-              </div>
+                <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 1 }}>
+                  {menuOpen ? "▲" : "▾"}
+                </span>
+              </button>
 
-              {/* Navigation row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <NavLink label="Stats"    onClick={() => router.push("/dashboard")} />
-                {SEP}
-                <NavLink label="History"  onClick={() => router.push("/history")} />
-                {SEP}
-                <NavLink label="Pricing"  onClick={() => router.push("/pricing")} />
-                {isScholar && (
-                  <>
-                    {SEP}
-                    <NavLink label="Archive" onClick={() => router.push("/archive")} />
-                    {SEP}
-                    <NavLink label="Digest"  onClick={() => router.push("/digest")} />
-                  </>
-                )}
-                {SEP}
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--wrong)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+              {/* Dropdown panel */}
+              {menuOpen && (
+                <div
                   style={{
-                    background: "none", border: "none", padding: "3px 0",
-                    fontFamily: "Lora, Georgia, serif", fontSize: 12,
-                    cursor: "pointer", color: "var(--text-muted)", transition: "color 0.12s",
+                    position: "absolute", right: 0, top: "calc(100% + 6px)",
+                    background: "var(--bg)", border: "1.5px solid var(--border)",
+                    borderRadius: 10, minWidth: 160,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    overflow: "hidden", zIndex: 200,
                   }}
                 >
-                  Sign out
-                </button>
-              </div>
+                  <MenuItem label="Stats"    onClick={() => router.push("/dashboard")} />
+                  <MenuItem label="History"  onClick={() => router.push("/history")} />
+                  <MenuItem label="Pricing"  onClick={() => router.push("/pricing")} />
+                  {isScholar && (
+                    <>
+                      <MenuItem label="Archive" onClick={() => router.push("/archive")} />
+                      <MenuItem label="Digest"  onClick={() => router.push("/digest")} />
+                    </>
+                  )}
+                  <div style={{ borderTop: "1px solid var(--border)", margin: "4px 0" }} />
+                  <MenuItem label="Sign Out" onClick={() => signOut({ callbackUrl: "/" })} danger />
+                </div>
+              )}
             </div>
           )}
         </div>
