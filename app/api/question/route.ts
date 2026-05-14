@@ -3,79 +3,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { Difficulty, Question, FALLBACK_QUESTIONS } from "@/lib/types";
 import { getGregorianDateString, getTodayKey } from "@/lib/jewishDate";
 import { getTodaysPeriod } from "@/lib/jewishCalendar";
-import { QUESTION_BANK, BankQuestion } from "@/lib/questions";
+import { selectFromBank } from "@/lib/questionSelection";
+// BankQuestion import kept for the strip destructure below
+import type { BankQuestion } from "@/lib/questions";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-// ─── Deterministic date-based hash ───────────────────────────────────────────
-
-function dateHash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = Math.imul(31, h) + s.charCodeAt(i);
-    h |= 0; // keep 32-bit
-  }
-  return Math.abs(h);
-}
-
-// ─── Bank selection ───────────────────────────────────────────────────────────
-
-const MIN_PERIOD_POOL = 3; // fall back to general if fewer than this
-
-// Parasha periods that fall during the Sefirat HaOmer season (post-Pesach → Shavuot).
-// During these weeks the Omer question pool is added so Omer-themed questions surface
-// alongside the weekly parasha questions.
-const OMER_SEASON_PERIODS = new Set([
-  "Shemini", "TazriaMetzora", "AchreiMotKedoshim", "Emor", "BeharBechukotai", "Bamidbar",
-]);
-
-function selectFromBank(
-  difficulty: Difficulty,
-  period: string,
-  today: string,
-): BankQuestion | null {
-  const byDifficulty = QUESTION_BANK.filter((q) => q.difficulty === difficulty);
-
-  const periodPool  = byDifficulty.filter((q) => q.relevantPeriod === period);
-  const generalPool = byDifficulty.filter((q) => q.relevantPeriod === "general");
-
-  // Omer overlay: blend in Omer questions during the 7 post-Pesach parasha weeks.
-  const omerPool = OMER_SEASON_PERIODS.has(period)
-    ? byDifficulty.filter((q) => q.relevantPeriod === "Omer")
-    : [];
-
-  // Shabbat overlay: if today is Saturday (getDay() === 6) blend in Shabbat questions
-  // so Shabbat-themed content surfaces regardless of the weekly parasha.
-  const dayOfWeek = new Date(today + "T12:00:00").getDay();
-  const shabbatPool = dayOfWeek === 6
-    ? byDifficulty.filter((q) => q.relevantPeriod === "Shabbat")
-    : [];
-
-  // Build primary pool: prefer period-specific; fall back to general when thin.
-  const primaryPool =
-    periodPool.length >= MIN_PERIOD_POOL
-      ? periodPool
-      : dedupe([...periodPool, ...generalPool]);
-
-  // Merge overlays (deduped). Overlays extend — never replace — the primary pool.
-  const pool = dedupe([...primaryPool, ...omerPool, ...shabbatPool]);
-
-  if (pool.length === 0) return null;
-
-  // Sort by id for stable ordering, then pick deterministically by date.
-  const sorted = [...pool].sort((a, b) => a.id.localeCompare(b.id));
-  const idx = dateHash(today + difficulty + period) % sorted.length;
-  return sorted[idx];
-}
-
-function dedupe(arr: BankQuestion[]): BankQuestion[] {
-  const seen = new Set<string>();
-  return arr.filter((q) => {
-    if (seen.has(q.id)) return false;
-    seen.add(q.id);
-    return true;
-  });
-}
 
 // ─── Claude fallback ──────────────────────────────────────────────────────────
 

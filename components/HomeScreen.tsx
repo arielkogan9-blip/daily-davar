@@ -1,7 +1,80 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Difficulty } from "@/lib/types";
 import { getHebrewDateString } from "@/lib/jewishDate";
+
+// ─── Jerusalem midnight countdown ─────────────────────────────────────────────
+
+function getSecondsUntilJerusalemMidnight(): number {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Jerusalem",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const get = (t: string) =>
+      parseInt(parts.find((p) => p.type === t)?.value ?? "0", 10);
+    const elapsed = get("hour") * 3600 + get("minute") * 60 + get("second");
+    return Math.max(0, 86400 - elapsed);
+  } catch {
+    return 0;
+  }
+}
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function CountdownTimer() {
+  const [secs, setSecs] = useState(getSecondsUntilJerusalemMidnight);
+
+  useEffect(() => {
+    const id = setInterval(() => setSecs(getSecondsUntilJerusalemMidnight()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        marginTop: 10,
+        fontSize: 12,
+        color: "var(--text-muted)",
+        fontStyle: "italic",
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ fontStyle: "normal" }}>⏳</span>
+      <span>
+        New questions in{" "}
+        <span
+          style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 14,
+            fontWeight: 600,
+            fontStyle: "normal",
+            color: "var(--navy)",
+            letterSpacing: "0.5px",
+          }}
+        >
+          {pad(h)}:{pad(m)}:{pad(s)}
+        </span>
+      </span>
+      <span style={{ color: "var(--border-dark)" }}>·</span>
+      <span>resets midnight Jerusalem time</span>
+    </div>
+  );
+}
 
 type HomeScreenProps = {
   onSelectDifficulty: (difficulty: Difficulty) => void;
@@ -119,6 +192,7 @@ export default function HomeScreen({ onSelectDifficulty, onHowToPlay }: HomeScre
           <span style={{ color: "var(--border-dark)" }}>·</span>
           <span dir="rtl">{hebrewDate}</span>
         </div>
+        <CountdownTimer />
       </section>
 
       {/* Section 2 — Divider */}

@@ -148,23 +148,24 @@ function normaliseToAnchorYear(input: Date): Date {
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
+ * Core period lookup for any given YYYY-MM-DD date string.
+ */
+export function getTodaysPeriodForDate(dateKey: string): string {
+  const norm    = normaliseToAnchorYear(new Date(dateKey + "T12:00:00"));
+  const normKey = norm.toISOString().slice(0, 10);
+  const sorted  = [...STARTS_5786].sort((a, b) => a.date.localeCompare(b.date));
+  let match = "general";
+  for (const entry of sorted) {
+    if (entry.date <= normKey) { match = entry.period; }
+    else { break; }
+  }
+  return match;
+}
+
+/**
  * Returns the Jewish calendar period for today (e.g. "Bereishit", "Pesach",
  * "Omer", "ThreeWeeks", or "general").
  */
 export function getTodaysPeriod(): string {
-  const todayKey = getTodayKey();             // "YYYY-MM-DD"
-  const todayNorm = normaliseToAnchorYear(new Date(todayKey + "T12:00:00"));
-  const normKey = todayNorm.toISOString().slice(0, 10);
-
-  // Walk backwards through sorted starts to find the most-recent match
-  const sorted = [...STARTS_5786].sort((a, b) => a.date.localeCompare(b.date));
-  let match = "general";
-  for (const entry of sorted) {
-    if (entry.date <= normKey) {
-      match = entry.period;
-    } else {
-      break;
-    }
-  }
-  return match;
+  return getTodaysPeriodForDate(getTodayKey());
 }

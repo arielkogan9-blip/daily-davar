@@ -11,6 +11,10 @@ export type Question = {
   answer: string;
   options: string[];
   hint: string;
+  /** 2-3 sentences explaining why the answer is correct (plus/scholar tier). */
+  explanation?: string;
+  /** 2-3 sentences of broader Torah/halachic context (scholar tier). */
+  parashaContext?: string;
 };
 
 export type Attempt = {

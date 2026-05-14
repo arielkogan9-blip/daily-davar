@@ -23,6 +23,28 @@
   --radius: 10px;
 }
 
+/* ─── Dark mode overrides ───────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:           #111318;
+  --card:         #1C2030;
+  --navy:         #4A73B0;
+  --navy-hover:   #5A88CC;
+  --gold:         #D4A843;
+  --gold-pale:    #F0DFA8;
+  --gold-muted:   rgba(212, 168, 67, 0.13);
+  --border:       #2E3448;
+  --border-dark:  #3D4560;
+  --text:         #E8DFC8;
+  --text-muted:   #8A7D6E;
+  --correct:      #2E7A50;
+  --correct-pale: #0d2a1c;
+  --present:      #B8891E;
+  --absent:       #46423D;
+  --absent-text:  #FFFFFF;
+  --wrong:        #B53030;
+  --wrong-pale:   #2a0f0f;
+}
+
 @theme inline {
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: Lora, Georgia, serif;

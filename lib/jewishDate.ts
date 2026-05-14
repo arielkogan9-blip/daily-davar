@@ -1,20 +1,17 @@
 // TODO: integrate a real Hebrew calendar library (e.g. hebcal) to compute these dynamically
 
+// "en-CA" locale gives ISO YYYY-MM-DD format from toLocaleDateString.
+// Both functions use the Asia/Jerusalem timezone so the daily question reset
+// matches the countdown timer on the home screen exactly.
+
 export function getTodayKey(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 }
 
 export function getYesterdayKey(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  // Subtract 24 h then convert — always lands on the previous Jerusalem date.
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return yesterday.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 }
 export function getHebrewDateString(): string {
   return "כ׳ אייר תשפ״ו";

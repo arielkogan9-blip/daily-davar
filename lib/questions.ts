@@ -1,4 +1,4 @@
-import { Difficulty, QuestionType } from "./types";
+﻿import { Difficulty, QuestionType } from "./types";
 
 export type BankQuestion = {
   id: string;
@@ -6393,10 +6393,10 @@ export const QUESTION_BANK: BankQuestion[] = [
     hint:"The parasha's full name means 'And this is the BRACHA.' The blessing (bracha) was Moses's final gift to Israel before his death." },
 
   { id:"vzh-m-02", relevantPeriod:"SimchatTorah", difficulty:"medium", parasha:"Parashat VeZot HaBracha", topic_category:"Torah",
-    context:"Moses died on Mount Nebo — a specific peak in the Abarim mountain range overlooking the Jordan Valley and the Promised Land. This mountain is also mentioned in Haazinu.",
-    question:"What is the name of the mountain where Moses died, overlooking the Promised Land?",
-    type:"wordle", answer:"NEBO", options:[],
-    hint:"Mount Nebo is in modern Jordan, near the city of Madaba. The site is today marked by a church and a memorial to Moses." },
+    context:"In VeZot HaBracha, Moses blesses each tribe before his death. The tribe of Benjamin receives a uniquely tender blessing: the beloved of the LORD shall dwell in safety by Him, resting between His shoulders (Devarim 33:12). The Temple Mount in Jerusalem would later lie within this tribe territory.",
+    question:"Which tribe is called the beloved of the LORD in Moses final blessing, described as dwelling safely between God shoulders?",
+    type:"wordle", answer:"BINYAMIN", options:[],
+    hint:"The youngest of Jacob twelve sons. This tribe territory in the Land of Israel later enclosed the Temple Mount in Jerusalem." },
 
   { id:"vzh-m-03", relevantPeriod:"SimchatTorah", difficulty:"medium", parasha:"Parashat VeZot HaBracha", topic_category:"Torah",
     context:"The holiday on which VeZot HaBracha is read celebrates the completion of the annual Torah cycle with great rejoicing. The name of this holiday captures the Jewish relationship with Torah.",
@@ -6511,10 +6511,10 @@ export const QUESTION_BANK: BankQuestion[] = [
     hint:"If Rosh Hashana's two days are one long sacred day, the Shehecheyanu was already said the first night — the new fruit provides clear grounds for saying it again." },
 
   { id:"rh-m-02", relevantPeriod:"RoshHashana", difficulty:"medium", parasha:"Rosh Hashana", topic_category:"Holidays",
-    context:"The shofar is blown in a specific sequence of three distinct sound types. The first and most fundamental sound is a long, unbroken blast that opens and closes each set, symbolizing a clear call of attention.",
-    question:"What is the Hebrew name for the long unbroken shofar blast?",
-    type:"wordle", answer:"TEKIAH", options:[],
-    hint:"A single sustained sound — steady and whole. The tekiah opens and closes each shofar set and represents clarity and wholeness." },
+    context:"The Ten Days of Repentance (Aseret Yemei Teshuva) run from Rosh Hashana through Yom Kippur. Their defining spiritual concept is a Hebrew word meaning both repentance and return — turning away from wrongdoing and coming back to God with a genuinely changed heart.",
+    question:"What Hebrew word — meaning repentance and return — names the central spiritual act of the Days of Awe?",
+    type:"wordle", answer:"TESHUVAH", options:[],
+    hint:"From the root lashuv (to return). True teshuvah requires verbal confession, genuine remorse, and a concrete change of behaviour — not merely feeling regret." },
 
   { id:"rh-m-03", relevantPeriod:"RoshHashana", difficulty:"medium", parasha:"Rosh Hashana", topic_category:"Holidays",
     context:"The three broken, wailing shofar sounds express the spiritual state of a weeping heart before God. Their name comes from a root meaning broken or fractured — reflecting the sorrow of repentance.",

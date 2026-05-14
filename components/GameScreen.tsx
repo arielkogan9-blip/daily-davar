@@ -29,6 +29,8 @@ type GameScreenProps = {
   won: boolean;
   hintShown: boolean;
   gameOver: boolean;
+  /** User's membership tier — controls whether explanation is shown after answer. */
+  tier?: string;
   onSubmitAnswer: (answer: string) => void;
   onSelfGrade?: (correct: boolean, userText: string) => void;
   onRevealHint: () => void;
@@ -49,6 +51,7 @@ export default function GameScreen({
   won,
   hintShown,
   gameOver,
+  tier = "free",
   onSubmitAnswer,
   onSelfGrade,
   onRevealHint,
@@ -176,11 +179,12 @@ export default function GameScreen({
         </div>
       </div>
 
-      {/* Row 2 — Context card */}
+      {/* Row 2 — Context card (parashaContext visible to Scholar members only) */}
       <ContextCard
         parasha={question.parasha}
         topic_category={question.topic_category}
         context={question.context}
+        parashaContext={tier === "scholar" ? question.parashaContext : undefined}
       />
 
       {/* Row 3 — Question card */}

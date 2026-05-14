@@ -2,9 +2,16 @@ type ContextCardProps = {
   parasha: string;
   topic_category: string;
   context: string;
+  /** Scholar-only extended context — only rendered when provided. */
+  parashaContext?: string;
 };
 
-export default function ContextCard({ parasha, topic_category, context }: ContextCardProps) {
+export default function ContextCard({
+  parasha,
+  topic_category,
+  context,
+  parashaContext,
+}: ContextCardProps) {
   return (
     <div
       style={{
@@ -26,6 +33,7 @@ export default function ContextCard({ parasha, topic_category, context }: Contex
       >
         {topic_category} · Today&apos;s Topic
       </div>
+
       <div
         style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -37,6 +45,7 @@ export default function ContextCard({ parasha, topic_category, context }: Contex
       >
         {parasha}
       </div>
+
       <div
         style={{
           fontSize: 13,
@@ -47,6 +56,27 @@ export default function ContextCard({ parasha, topic_category, context }: Contex
       >
         {context}
       </div>
+
+      {/* Scholar-only parasha context */}
+      {parashaContext && (
+        <>
+          <div
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              margin: "12px 0 10px",
+            }}
+          />
+          <div
+            style={{
+              fontSize: 12,
+              lineHeight: 1.7,
+              color: "rgba(255, 255, 255, 0.65)",
+            }}
+          >
+            {parashaContext}
+          </div>
+        </>
+      )}
     </div>
   );
 }
