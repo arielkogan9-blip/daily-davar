@@ -9,13 +9,37 @@ import { getTodayKey, getYesterdayKey } from "@/lib/jewishDate";
 import { UserStats, loadStats, recordGame } from "@/lib/stats";
 import Header from "@/components/Header";
 import HomeScreen from "@/components/HomeScreen";
+import LandingPage from "@/components/LandingPage";
 import GameScreen from "@/components/GameScreen";
 import ResultScreen from "@/components/ResultScreen";
 import SettingsModal, { type SettingsTab } from "@/components/modals/SettingsModal";
 import AuthModal from "@/components/modals/AuthModal";
 import ArchiveModal from "@/components/modals/ArchiveModal";
+import OnboardingModal from "@/components/modals/OnboardingModal";
 
 const MAX_ATT = 5;
+
+// ─── Streak freeze helpers ─────────────────────────────────────────────────────
+
+function getWeekKey(): string {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil(((now.getTime() - jan1.getTime()) / 86_400_000 + jan1.getDay() + 1) / 7);
+  return `${now.getFullYear()}-W${week}`;
+}
+
+function loadFreezeCount(): number {
+  if (typeof window === "undefined") return 1;
+  const savedWeek = localStorage.getItem("dd_freeze_week");
+  const weekKey = getWeekKey();
+  if (savedWeek !== weekKey) {
+    // New week — reset to 1 freeze
+    localStorage.setItem("dd_freeze_week", weekKey);
+    localStorage.setItem("dd_freeze_count", "1");
+    return 1;
+  }
+  return parseInt(localStorage.getItem("dd_freeze_count") ?? "1", 10);
+}
 
 function loadArchive(): Record<string, ArchiveEntry> {
   if (typeof window === "undefined") return {};
@@ -65,6 +89,15 @@ export default function Home() {
   const [hintShown,   setHintShown]   = useState(false);
   const [isPractice,  setIsPractice]  = useState(false);
 
+  // ── Landing page / onboarding ──────────────────────────────────────────────
+  /** Logged-out users who clicked "Play" on the landing page */
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // ── Streak freeze ──────────────────────────────────────────────────────────
+  const [freezeCount, setFreezeCount] = useState<number>(() => loadFreezeCount());
+  const [toast,       setToast]       = useState<string | null>(null);
+
   // ── Persistent state ───────────────────────────────────────────────────────
   const [archive,   setArchive]   = useState<Record<string, ArchiveEntry>>(loadArchive);
   const [streak,    setStreak]    = useState<number>(() => {
@@ -73,6 +106,22 @@ export default function Home() {
   });
   const [userStats, setUserStats] = useState<UserStats>(() => loadStats());
   const [theme,     setTheme]     = useState<"light" | "dark">(getTheme);
+
+  // ── Onboarding: show on first visit ───────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!localStorage.getItem("dd_onboarded")) {
+      const t = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  // ── Toast auto-dismiss ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // ── Sync localStorage streak to state ─────────────────────────────────────
   useEffect(() => {
@@ -132,10 +181,31 @@ export default function Home() {
 
   // ── Streak helper (local, for non-logged-in users) ────────────────────────
   function applyLocalStreak(): number {
-    const today     = getTodayKey();
+    const today      = getTodayKey();
     const lastPlayed = localStorage.getItem("dd_last_played");
     if (lastPlayed === today) return streak;
-    const newStreak = lastPlayed === getYesterdayKey() ? streak + 1 : 1;
+
+    let newStreak: number;
+    if (lastPlayed === getYesterdayKey()) {
+      // Consecutive day — extend streak
+      newStreak = streak + 1;
+    } else if (streak > 0 && lastPlayed && lastPlayed < getYesterdayKey()) {
+      // Missed a day — check for freeze
+      const currentFreeze = loadFreezeCount();
+      if (currentFreeze > 0) {
+        // Consume freeze, preserve streak
+        const remaining = currentFreeze - 1;
+        localStorage.setItem("dd_freeze_count", String(remaining));
+        setFreezeCount(remaining);
+        setToast("❄️ Streak freeze used — streak preserved!");
+        newStreak = streak + 1;
+      } else {
+        newStreak = 1;
+      }
+    } else {
+      newStreak = 1;
+    }
+
     setStreak(newStreak);
     localStorage.setItem("dd_streak", String(newStreak));
     localStorage.setItem("dd_last_played", today);
@@ -238,6 +308,17 @@ export default function Home() {
     setActiveModal(wasP ? "archive" : null);
   }
 
+  // ── Derived state ──────────────────────────────────────────────────────────
+  const today = getTodayKey();
+  const todayCompleted: Partial<Record<Difficulty, boolean>> = {
+    easy:   !!archive[`${today}_easy`],
+    medium: !!archive[`${today}_medium`],
+    hard:   !!archive[`${today}_hard`],
+  };
+
+  // Show landing page for logged-out users who haven't clicked "Play" yet
+  const showLandingPage = !isLoggedIn && status !== "loading" && gamePhase === "home" && !hasStartedPlaying;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -249,51 +330,73 @@ export default function Home() {
         onLogin={() => setActiveModal("login")}
       />
 
-      {gamePhase === "home" && (
-        <HomeScreen
-          onSelectDifficulty={handleSelectDifficulty}
-          onHowToPlay={() => { setSettingsTab("howtoplay"); setActiveModal("settings"); }}
-        />
-      )}
+      {/* Toast notification */}
+      {toast && <div className="toast-msg">{toast}</div>}
 
-      {gamePhase === "loading" && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, minHeight: 320, paddingTop: 60 }}>
-          <div className="animate-spin" style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid var(--border)", borderTopColor: "var(--gold)" }} />
-          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontStyle: "italic", color: "var(--text-muted)" }}>
-            Preparing today&apos;s question…
-          </div>
-          <div style={{ fontSize: 28 }}>📜</div>
+      {/* Landing page for logged-out users */}
+      {showLandingPage ? (
+        <div key="landing" className="phase-enter">
+          <LandingPage
+            onPlay={() => setHasStartedPlaying(true)}
+            onLogin={() => setActiveModal("login")}
+          />
         </div>
-      )}
+      ) : (
+        <>
+          {gamePhase === "home" && (
+            <div key="home" className="phase-enter">
+              <HomeScreen
+                onSelectDifficulty={handleSelectDifficulty}
+                onHowToPlay={() => { setSettingsTab("howtoplay"); setActiveModal("settings"); }}
+                todayCompleted={todayCompleted}
+              />
+            </div>
+          )}
 
-      {gamePhase === "game" && question && difficulty && (
-        <GameScreen
-          question={question}
-          difficulty={difficulty}
-          attempts={attempts}
-          won={won}
-          hintShown={hintShown}
-          gameOver={gameOver}
-          tier={tier}
-          onSubmitAnswer={handleSubmitAnswer}
-          onSelfGrade={handleSelfGrade}
-          onRevealHint={handleRevealHint}
-          onWordleRowsChange={setWordleRows}
-        />
-      )}
+          {gamePhase === "loading" && (
+            <div key="loading" className="phase-enter" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, minHeight: 320, paddingTop: 60 }}>
+              <div className="animate-spin" style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid var(--border)", borderTopColor: "var(--gold)" }} />
+              <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontStyle: "italic", color: "var(--text-muted)" }}>
+                Preparing today&apos;s question…
+              </div>
+              <div style={{ fontSize: 28 }}>📜</div>
+            </div>
+          )}
 
-      {gamePhase === "result" && question && difficulty && (
-        <ResultScreen
-          question={question}
-          attempts={attempts}
-          won={won}
-          streak={streak}
-          difficulty={difficulty}
-          wordleRows={wordleRows}
-          hintShown={hintShown}
-          tier={tier}
-          onBackToHome={handleBackToHome}
-        />
+          {gamePhase === "game" && question && difficulty && (
+            <div key="game" className="phase-enter">
+              <GameScreen
+                question={question}
+                difficulty={difficulty}
+                attempts={attempts}
+                won={won}
+                hintShown={hintShown}
+                gameOver={gameOver}
+                tier={tier}
+                onSubmitAnswer={handleSubmitAnswer}
+                onSelfGrade={handleSelfGrade}
+                onRevealHint={handleRevealHint}
+                onWordleRowsChange={setWordleRows}
+              />
+            </div>
+          )}
+
+          {gamePhase === "result" && question && difficulty && (
+            <div key="result" className="phase-enter">
+              <ResultScreen
+                question={question}
+                attempts={attempts}
+                won={won}
+                streak={streak}
+                difficulty={difficulty}
+                wordleRows={wordleRows}
+                hintShown={hintShown}
+                tier={tier}
+                onBackToHome={handleBackToHome}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* ── Modals ── */}
@@ -304,6 +407,7 @@ export default function Home() {
           theme={theme}
           isLoggedIn={isLoggedIn}
           streak={streak}
+          freezeCount={freezeCount}
           onToggleTheme={handleToggleTheme}
           onLogin={() => { setActiveModal(null); setTimeout(() => setActiveModal("login"), 10); }}
           onClose={() => setActiveModal(null)}
@@ -323,6 +427,11 @@ export default function Home() {
           onPractice={handlePractice}
           onClose={() => setActiveModal(null)}
         />
+      )}
+
+      {/* Onboarding modal for first-time visitors */}
+      {showOnboarding && (
+        <OnboardingModal onClose={() => setShowOnboarding(false)} />
       )}
     </div>
   );

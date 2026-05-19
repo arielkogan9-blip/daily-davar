@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 // ─── Key-point parser ────────────────────────────────────────────────────────
 // Breaks a model answer into display bullets. Handles several common formats
@@ -75,6 +75,7 @@ export default function TextBox({
   const [value, setValue] = useState("");
   const [phase, setPhase] = useState<Phase>("input");
   const [savedInput, setSavedInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isOpenEnded = !!modelAnswer && !!onSelfGrade;
 
@@ -264,6 +265,7 @@ export default function TextBox({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -272,7 +274,11 @@ export default function TextBox({
         }}
         disabled={gameOver}
         placeholder={isOpenEnded ? "Write your answer, then see the key points…" : "Type your answer…"}
-        onFocus={(e) => (e.currentTarget.style.borderColor = "var(--navy)")}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "var(--navy)";
+          // Scroll into view so the mobile virtual keyboard doesn't cover the input
+          setTimeout(() => inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+        }}
         onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
         style={{
           width: "100%",

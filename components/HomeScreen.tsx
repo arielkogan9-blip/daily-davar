@@ -79,6 +79,8 @@ function CountdownTimer() {
 type HomeScreenProps = {
   onSelectDifficulty: (difficulty: Difficulty) => void;
   onHowToPlay: () => void;
+  /** Which difficulties have been completed today — used for unlock gating. */
+  todayCompleted?: Partial<Record<Difficulty, boolean>>;
 };
 
 const difficulties: {
@@ -122,8 +124,16 @@ const todayFormatted = new Date().toLocaleDateString("en-US", {
   day: "numeric",
 });
 
-export default function HomeScreen({ onSelectDifficulty, onHowToPlay }: HomeScreenProps) {
+export default function HomeScreen({ onSelectDifficulty, onHowToPlay, todayCompleted }: HomeScreenProps) {
   const hebrewDate = getHebrewDateString();
+
+  // Difficulty unlock: Medium requires Easy done; Hard requires Medium done
+  const easyDone   = !!todayCompleted?.easy;
+  const mediumDone = !!todayCompleted?.medium;
+  const isLocked: Partial<Record<Difficulty, string>> = {
+    medium: easyDone   ? undefined : "Complete Aleph (Easy) first",
+    hard:   mediumDone ? undefined : "Complete Bet (Medium) first",
+  };
 
   return (
     <div
@@ -235,7 +245,11 @@ export default function HomeScreen({ onSelectDifficulty, onHowToPlay }: HomeScre
               name={name}
               subtitle={subtitle}
               desc={desc}
-              onClick={() => onSelectDifficulty(level)}
+              locked={isLocked[level]}
+              onClick={() => {
+                if (isLocked[level]) return;
+                onSelectDifficulty(level);
+              }}
             />
           ))}
         </div>
@@ -255,6 +269,7 @@ function DifficultyCard({
   name,
   subtitle,
   desc,
+  locked,
   onClick,
 }: {
   letter: string;
@@ -262,12 +277,15 @@ function DifficultyCard({
   name: string;
   subtitle: string;
   desc: string;
+  locked?: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
+      title={locked}
       onMouseEnter={(e) => {
+        if (locked) return;
         const el = e.currentTarget;
         el.style.borderColor = "var(--navy)";
         el.style.transform = "translateY(-2px)";
@@ -275,16 +293,16 @@ function DifficultyCard({
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget;
-        el.style.borderColor = "var(--border)";
+        el.style.borderColor = locked ? "var(--border)" : "var(--border)";
         el.style.transform = "translateY(0)";
         el.style.boxShadow = "none";
       }}
       style={{
-        background: "var(--card)",
+        background: locked ? "var(--bg)" : "var(--card)",
         border: "1.5px solid var(--border)",
         borderRadius: "var(--radius)",
         padding: "20px 12px 16px",
-        cursor: "pointer",
+        cursor: locked ? "not-allowed" : "pointer",
         textAlign: "center",
         display: "flex",
         flexDirection: "column",
@@ -293,8 +311,24 @@ function DifficultyCard({
         transition: "all 0.2s",
         transform: "translateY(0)",
         boxShadow: "none",
+        opacity: locked ? 0.55 : 1,
+        position: "relative",
       }}
     >
+      {locked && (
+        <div style={{
+          position: "absolute", inset: 0, borderRadius: "var(--radius)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          background: "rgba(250,245,236,0.7)",
+          zIndex: 1, gap: 4, padding: "0 8px",
+        }}>
+          <span style={{ fontSize: 20 }}>🔒</span>
+          <span style={{ fontSize: 10, color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>
+            {locked}
+          </span>
+        </div>
+      )}
       <span
         style={{
           fontFamily: "'Cormorant Garamond', Georgia, serif",

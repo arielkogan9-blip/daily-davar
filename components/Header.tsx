@@ -249,9 +249,10 @@ export default function Header({ streak, onSettings, onArchive, onLogin }: Heade
                     overflow: "hidden", zIndex: 200,
                   }}
                 >
-                  <MenuItem label="Stats"    onClick={() => router.push("/dashboard")} />
-                  <MenuItem label="History"  onClick={() => router.push("/history")} />
-                  <MenuItem label="Pricing"  onClick={() => router.push("/pricing")} />
+                  <MenuItem label="Stats"        onClick={() => router.push("/dashboard")} />
+                  <MenuItem label="History"      onClick={() => router.push("/history")} />
+                  <MenuItem label="Leaderboard"  onClick={() => router.push("/leaderboard")} />
+                  <MenuItem label="Pricing"      onClick={() => router.push("/pricing")} />
                   {isScholar && (
                     <>
                       <MenuItem label="Archive" onClick={() => router.push("/archive")} />

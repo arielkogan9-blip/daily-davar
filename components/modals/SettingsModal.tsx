@@ -13,6 +13,7 @@ type SettingsModalProps = {
   theme: "light" | "dark";
   isLoggedIn: boolean;
   streak: number;
+  freezeCount?: number;
   initialTab?: SettingsTab;
   onToggleTheme: () => void;
   onLogin: () => void;
@@ -104,8 +105,8 @@ const DIFF_META = {
   hard:   { label: "ג Gimel",    bg: "var(--wrong-pale)",   color: "var(--wrong)"   },
 } as const;
 
-function StatsTab({ stats, streak, isLoggedIn, onLogin }: {
-  stats: UserStats; streak: number; isLoggedIn: boolean; onLogin: () => void;
+function StatsTab({ stats, streak, isLoggedIn, onLogin, freezeCount }: {
+  stats: UserStats; streak: number; isLoggedIn: boolean; onLogin: () => void; freezeCount: number;
 }) {
   const overall = winRatePct(stats.totalPlayed, stats.totalWon);
 
@@ -135,6 +136,29 @@ function StatsTab({ stats, streak, isLoggedIn, onLogin }: {
         </div>
         <div style={{ color: "var(--gold-pale)", fontSize: 13, marginTop: 6, opacity: 0.7 }}>
           {stats.totalWon} wins from {stats.totalPlayed} games
+        </div>
+      </div>
+
+      {/* Streak freeze pill */}
+      <div style={{
+        background: "var(--card)", border: "1.5px solid var(--border)",
+        borderRadius: 10, padding: "12px 16px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div>
+          <div style={{ ...LABEL, marginBottom: 2 }}>Streak Freeze</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {freezeCount > 0
+              ? `You have ${freezeCount} freeze${freezeCount > 1 ? "s" : ""} — your streak is protected if you miss a day.`
+              : "No freezes left. Play daily to earn more next week."}
+          </div>
+        </div>
+        <div style={{
+          fontFamily: "'Cormorant Garamond', Georgia, serif",
+          fontSize: 26, fontWeight: 700, color: freezeCount > 0 ? "var(--navy)" : "var(--text-muted)",
+          flexShrink: 0, marginLeft: 12,
+        }}>
+          ❄️ {freezeCount}
         </div>
       </div>
 
@@ -493,6 +517,8 @@ function FeedbackTab() {
 
 // ─── Account tab ─────────────────────────────────────────────────────────────
 
+const AVATAR_EMOJIS = ["📜", "🕍", "✡️", "🕎", "📖", "🌟", "🦁", "🕊️", "🌿", "🏔️"];
+
 function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => void }) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
@@ -500,12 +526,47 @@ function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => 
   const email = session?.user?.email ?? "";
   const tier  = (session?.user as { tier?: string })?.tier ?? "free";
 
+  // Local display name + avatar stored in localStorage
+  const [displayName, setDisplayName] = useState(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("dd_display_name") ?? name) : name
+  );
+  const [avatar, setAvatar] = useState(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("dd_avatar_emoji") ?? "📜") : "📜"
+  );
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(displayName);
+  const [saving,  setSaving]  = useState(false);
+
   const tierColors: Record<string, { bg: string; color: string }> = {
     free:    { bg: "var(--border)",       color: "var(--text-muted)" },
     plus:    { bg: "var(--gold-muted)",   color: "var(--gold)"       },
     scholar: { bg: "var(--correct-pale)", color: "var(--correct)"    },
   };
   const tc = tierColors[tier] ?? tierColors.free;
+  const shownName = displayName || name || email.split("@")[0] || "Player";
+
+  function handleAvatarPick(emoji: string) {
+    setAvatar(emoji);
+    localStorage.setItem("dd_avatar_emoji", emoji);
+  }
+
+  async function handleSaveName() {
+    const trimmed = editVal.trim().slice(0, 40);
+    setDisplayName(trimmed || name);
+    localStorage.setItem("dd_display_name", trimmed);
+    if (isLoggedIn && trimmed) {
+      setSaving(true);
+      try {
+        await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: trimmed }),
+        });
+      } catch { /* non-fatal */ }
+      setSaving(false);
+    }
+    setEditing(false);
+  }
 
   if (!isLoggedIn) {
     return (
@@ -540,17 +601,14 @@ function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => 
           width: 52, height: 52, borderRadius: "50%",
           background: "rgba(255,255,255,0.12)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 24, fontWeight: 700, color: "var(--gold)", flexShrink: 0,
+          fontSize: 28, flexShrink: 0,
         }}>
-          {(name || email).charAt(0).toUpperCase()}
+          {avatar}
         </div>
         <div style={{ minWidth: 0 }}>
-          {name && (
-            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 700, color: "var(--gold-pale)", marginBottom: 2 }}>
-              {name}
-            </div>
-          )}
+          <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 700, color: "var(--gold-pale)", marginBottom: 2 }}>
+            {shownName}
+          </div>
           <div style={{ fontSize: 13, color: "var(--gold-pale)", opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {email}
           </div>
@@ -565,10 +623,88 @@ function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => 
         </div>
       </div>
 
+      {/* Avatar picker */}
+      <div>
+        <div style={{ ...LABEL, marginBottom: 8 }}>Avatar</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {AVATAR_EMOJIS.map((e) => (
+            <button
+              key={e}
+              onClick={() => handleAvatarPick(e)}
+              style={{
+                width: 38, height: 38, borderRadius: 8, fontSize: 20,
+                border: `2px solid ${avatar === e ? "var(--navy)" : "var(--border)"}`,
+                background: avatar === e ? "var(--card)" : "transparent",
+                cursor: "pointer", transition: "all 0.12s",
+              }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Display name editor */}
+      <div>
+        <div style={{ ...LABEL, marginBottom: 6 }}>Display Name</div>
+        {editing ? (
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={editVal}
+              onChange={(e) => setEditVal(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditing(false); }}
+              maxLength={40}
+              autoFocus
+              style={{
+                flex: 1, padding: "9px 12px",
+                border: "1.5px solid var(--navy)", borderRadius: 8,
+                fontFamily: "Lora, Georgia, serif", fontSize: 14,
+                color: "var(--text)", background: "var(--card)", outline: "none",
+              }}
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={saving}
+              style={{
+                background: "var(--navy)", color: "var(--gold-pale)",
+                border: "none", borderRadius: 8, padding: "9px 16px",
+                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                fontSize: 14, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              {saving ? "…" : "Save"}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              style={{
+                background: "none", border: "1.5px solid var(--border)", borderRadius: 8,
+                padding: "9px 12px", cursor: "pointer", color: "var(--text-muted)", fontSize: 14,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+            background: "var(--card)", border: "1.5px solid var(--border)", borderRadius: 8, padding: "10px 14px" }}>
+            <span style={{ fontSize: 14, color: "var(--text)" }}>{shownName}</span>
+            <button
+              onClick={() => { setEditVal(displayName || name); setEditing(true); }}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 12, color: "var(--text-muted)", textDecoration: "underline",
+                fontFamily: "Lora, Georgia, serif",
+              }}
+            >
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Info rows */}
       <div style={{ background: "var(--card)", border: "1.5px solid var(--border)", borderRadius: 10 }}>
         {[
-          { label: "Name",  value: name  || "—" },
           { label: "Email", value: email || "—" },
           { label: "Plan",  value: tier.charAt(0).toUpperCase() + tier.slice(1) },
         ].map((row, i, arr) => (
@@ -605,7 +741,7 @@ function AccountTab({ onLogin, onClose }: { onLogin: () => void; onClose: () => 
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
 export default function SettingsModal({
-  stats, theme, isLoggedIn, streak, initialTab, onToggleTheme, onLogin, onClose,
+  stats, theme, isLoggedIn, streak, freezeCount = 0, initialTab, onToggleTheme, onLogin, onClose,
 }: SettingsModalProps) {
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? "stats");
 
@@ -697,7 +833,7 @@ export default function SettingsModal({
         {/* Tab content */}
         <div style={{ padding: "22px 22px 28px", overflowY: "auto", flex: 1 }}>
           {tab === "account"    && <AccountTab onLogin={onLogin} onClose={onClose} />}
-          {tab === "stats"      && <StatsTab stats={stats} streak={streak} isLoggedIn={isLoggedIn} onLogin={onLogin} />}
+          {tab === "stats"      && <StatsTab stats={stats} streak={streak} isLoggedIn={isLoggedIn} onLogin={onLogin} freezeCount={freezeCount} />}
           {tab === "appearance" && <AppearanceTab theme={theme} onToggle={onToggleTheme} />}
           {tab === "howtoplay"  && <HowToPlayTab />}
           {tab === "feedback"   && <FeedbackTab />}
