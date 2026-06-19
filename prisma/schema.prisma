@@ -9,13 +9,14 @@ datasource db {
 // ─── Auth models (NextAuth standard) ─────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  password  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  tier      String   @default("free")
+  id               String   @id @default(cuid())
+  name             String?
+  email            String   @unique
+  password         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tier             String   @default("free")
+  stripeCustomerId String?
 
   accounts             Account[]
   sessions             Session[]
@@ -23,6 +24,7 @@ model User {
   streak               UserStreak?
   ownedClassrooms      Classroom[]
   classroomMemberships ClassroomMember[]
+  passwordResetTokens  PasswordResetToken[]
 }
 
 model Account {
@@ -131,4 +133,17 @@ model Suggestion {
   email      String
   suggestion String
   createdAt  DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }

@@ -3,6 +3,7 @@
 import BackButton from "@/components/BackButton";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import WaitlistModal from "@/components/modals/WaitlistModal";
 
 // ─── Feature row ──────────────────────────────────────────────────────────────
@@ -56,7 +57,27 @@ function Price({ main, sub }: { main: string; sub?: string }) {
 
 export default function PricingPage() {
   const router  = useRouter();
+  const { data: session } = useSession();
   const [waitlist, setWaitlist] = useState<"plus" | "scholar" | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  async function startCheckout(plan: string) {
+    if (!session) { setWaitlist(plan === "plus-monthly" ? "plus" : "scholar"); return; }
+    setCheckoutLoading(plan);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setCheckoutLoading(null);
+    }
+  }
 
   const CTA_BTN = (primary: boolean): React.CSSProperties => ({
     width: "100%", padding: "14px",
@@ -191,8 +212,9 @@ export default function PricingPage() {
                             <Feature text="Weekly printable digest"              included={false} />
             </div>
             <button
-              style={{ ...CTA_BTN(true), background: "var(--gold)", borderColor: "var(--gold)" }}
-              onClick={() => setWaitlist("plus")}
+              style={{ ...CTA_BTN(true), background: "var(--gold)", borderColor: "var(--gold)", opacity: checkoutLoading === "plus-monthly" ? 0.65 : 1 }}
+              onClick={() => startCheckout("plus-monthly")}
+              disabled={!!checkoutLoading}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#A07818";
                 e.currentTarget.style.borderColor = "#A07818";
@@ -202,7 +224,7 @@ export default function PricingPage() {
                 e.currentTarget.style.borderColor = "var(--gold)";
               }}
             >
-              Upgrade to Plus →
+              {checkoutLoading === "plus-monthly" ? "Loading…" : "Upgrade to Plus →"}
             </button>
           </div>
 
@@ -256,8 +278,10 @@ export default function PricingPage() {
                 fontFamily: "'Cormorant Garamond', Georgia, serif",
                 fontSize: 17, fontWeight: 600, letterSpacing: "0.5px",
                 cursor: "pointer", transition: "all 0.15s", marginTop: "auto",
+                opacity: checkoutLoading === "scholar-monthly" ? 0.65 : 1,
               }}
-              onClick={() => setWaitlist("scholar")}
+              onClick={() => startCheckout("scholar-monthly")}
+              disabled={!!checkoutLoading}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--gold)";
                 e.currentTarget.style.color = "#fff";
@@ -267,7 +291,7 @@ export default function PricingPage() {
                 e.currentTarget.style.color = "var(--gold)";
               }}
             >
-              Upgrade to Scholar →
+              {checkoutLoading === "scholar-monthly" ? "Loading…" : "Upgrade to Scholar →"}
             </button>
           </div>
         </div>
@@ -277,7 +301,7 @@ export default function PricingPage() {
           textAlign: "center", fontSize: 12, color: "var(--text-muted)",
           marginTop: 40, lineHeight: 1.7,
         }}>
-          Plus and Scholar memberships are launching soon. Join the waitlist to be notified first.
+          Subscriptions are billed via Stripe. Cancel any time from your account settings.
           <br />
           All tiers include access to all 1,200+ questions in the daily rotation.
         </p>

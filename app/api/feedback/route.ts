@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { rateLimit, getIP } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
+  if (!rateLimit(`feedback:${getIP(req)}`, 5, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
+  }
+
   try {
     const { message } = await req.json() as { message?: string };
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { rateLimit, getIP } from "@/lib/ratelimit";
 import { Difficulty, Question, FALLBACK_QUESTIONS } from "@/lib/types";
 import { getGregorianDateString, getTodayKey } from "@/lib/jewishDate";
 import { getTodaysPeriod } from "@/lib/jewishCalendar";
@@ -51,6 +52,10 @@ Rules: easy options must contain exactly 4 items including the correct answer. w
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
+  if (!rateLimit(`question:${getIP(req)}`, 30, 60_000)) {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+  }
+
   let difficulty: Difficulty = "easy";
 
   try {

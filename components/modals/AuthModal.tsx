@@ -11,7 +11,7 @@ type AuthModalProps = {
   initialMode?: "login" | "register";
 };
 
-type Mode = "login" | "register";
+type Mode = "login" | "register" | "forgot";
 type SubmitState = "idle" | "loading" | "error";
 
 // ─── Shared input style ───────────────────────────────────────────────────────
@@ -95,10 +95,11 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
   const [error, setError] = useState<string>("");
 
   // Form fields
-  const [name,     setName]     = useState("");
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm,  setConfirm]  = useState("");
+  const [name,          setName]          = useState("");
+  const [email,         setEmail]         = useState("");
+  const [password,      setPassword]      = useState("");
+  const [confirm,       setConfirm]       = useState("");
+  const [forgotSent,    setForgotSent]    = useState(false);
 
   function switchMode(m: Mode) {
     setMode(m);
@@ -116,6 +117,26 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
       if (password !== confirm)     return "Passwords do not match.";
     }
     return null;
+  }
+
+  // ── Forgot password submit ────────────────────────────────────────────────
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) { setError("Email is required."); return; }
+    setState("loading");
+    setError("");
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      });
+      setForgotSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setState("idle");
+    }
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -180,6 +201,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
   }
 
   const isLogin  = mode === "login";
+  const isForgot = mode === "forgot";
   const loading  = state === "loading";
 
   return (
@@ -190,15 +212,57 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
         fontSize: 28, fontWeight: 700, color: "var(--navy)",
         textAlign: "center", marginBottom: 6,
       }}>
-        {isLogin ? "Welcome Back" : "Create Account"}
+        {isForgot ? "Reset Password" : isLogin ? "Welcome Back" : "Create Account"}
       </div>
 
       <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginBottom: 22, lineHeight: 1.6 }}>
-        {isLogin
+        {isForgot
+          ? "Enter your email and we'll send you a reset link."
+          : isLogin
           ? "Sign in to save your streak and track your progress."
           : "Join Daily Davar — free forever, upgrade any time."}
       </p>
 
+      {/* Forgot password flow */}
+      {isForgot && (
+        forgotSent ? (
+          <div style={{ textAlign: "center", padding: "12px 0" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📬</div>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
+              If an account exists for that email, a reset link is on its way.
+            </p>
+            <button onClick={() => switchMode("login")} style={{ marginTop: 16, background: "none", border: "none", color: "var(--gold)", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+              ← Back to sign in
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {error && (
+              <div style={{ background: "var(--wrong-pale)", border: "1px solid var(--wrong)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--wrong)" }}>
+                {error}
+              </div>
+            )}
+            <TextInput type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} required />
+            <button type="submit" disabled={loading} style={{
+              background: "var(--navy)", color: "var(--gold-pale)", border: "none", borderRadius: 8, padding: 13,
+              fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontWeight: 600,
+              cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.65 : 1, marginTop: 4,
+            }}>
+              {loading ? "Sending…" : "Send Reset Link"}
+            </button>
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button onClick={() => switchMode("login")} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                ← Back to sign in
+              </button>
+            </div>
+          </form>
+        )
+      )}
+
+      {isForgot && null /* rest of modal hidden */}
+
+      {/* Login / Register flow */}
+      {!isForgot && <>
       {/* Error banner */}
       {error && (
         <div style={{
@@ -300,6 +364,9 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
                 Create one free
               </button>
             </span>
+            <button onClick={() => switchMode("forgot")} style={{ background: "none", border: "none", padding: 0, color: "var(--text-muted)", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+              Forgot password?
+            </button>
             <button onClick={onClose} style={{ background: "none", border: "none", padding: 0, color: "var(--text-muted)", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
               Continue as guest
             </button>
@@ -313,6 +380,7 @@ export default function AuthModal({ onClose, onSuccess, initialMode = "login" }:
           </span>
         )}
       </div>
+      </>}
     </ModalShell>
   );
 }

@@ -233,7 +233,7 @@ export default function HomeScreen({ onSelectDifficulty, onHowToPlay, todayCompl
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
             gap: 12,
           }}
         >

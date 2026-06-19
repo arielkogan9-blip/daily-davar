@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
@@ -40,6 +41,42 @@ export async function POST(req: Request) {
       },
       select: { id: true, name: true, email: true, tier: true, createdAt: true },
     });
+
+    // Fire-and-forget welcome email
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASS;
+    if (gmailUser && gmailPass && gmailPass !== "your_app_password_here") {
+      nodemailer.createTransport({ service: "gmail", auth: { user: gmailUser, pass: gmailPass } })
+        .sendMail({
+          from: `"Daily Davar" <${gmailUser}>`,
+          to: normalised,
+          subject: "Welcome to Daily Davar 📜",
+          html: `
+            <div style="font-family:Georgia,serif;max-width:560px;padding:32px;background:#FAF5EC;border-radius:12px;margin:0 auto;">
+              <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:48px;">📜</div>
+                <h1 style="color:#18285A;font-size:28px;margin:8px 0 4px;">Welcome to Daily Davar</h1>
+                <div style="color:#B8891E;font-size:22px;letter-spacing:8px;">דָּבָר</div>
+              </div>
+              <p style="color:#4A3F2F;line-height:1.7;margin:0 0 16px;">
+                Shalom${user.name ? ` ${user.name}` : ""}! Your account is ready.
+              </p>
+              <p style="color:#4A3F2F;line-height:1.7;margin:0 0 16px;">
+                Each day brings a new question tied to the Hebrew calendar — three levels of difficulty, one Torah thought to carry with you.
+              </p>
+              <div style="text-align:center;margin:28px 0;">
+                <a href="https://daily-davar.vercel.app" style="background:#18285A;color:#F0DFA8;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:600;">
+                  Start Playing →
+                </a>
+              </div>
+              <p style="color:#8C7B65;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+                Questions? Reply to this email or visit <a href="https://daily-davar.vercel.app" style="color:#B8891E;">daily-davar.vercel.app</a>
+              </p>
+            </div>
+          `,
+        })
+        .catch((e: unknown) => console.error("[register] welcome email failed:", e));
+    }
 
     return NextResponse.json({ ok: true, user }, { status: 201 });
   } catch (err) {
